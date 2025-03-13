@@ -9,16 +9,17 @@
   <video id="preview" autoplay playsinline width="640" height="480"></video>
 
   <script>
-    async function startCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        document.getElementById('preview').srcObject = stream;
-        console.log('✅ Camera access granted');
-      } catch (err) {
-        console.error('❌ Error accessing camera:', err);
-        alert('Camera access denied or not supported!');
-      }
-    }
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true }); // Skip audio for now
+    document.getElementById('preview').srcObject = stream;
+    console.log('✅ Camera access granted (video only)');
+  } catch (err) {
+    console.error('❌ Error accessing camera:', err);
+    alert('Camera access denied or not supported!');
+  }
+}
+
 
     startCamera();
   </script>
