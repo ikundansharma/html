@@ -34,7 +34,7 @@
         mediaRecorder.start();
       } catch (err) {
         alert('Camera access denied or not supported!');
-        console.error(err);
+        console.error('Camera error:', err);
       }
     }
 
@@ -53,7 +53,7 @@
       stopRecording();
       document.getElementById('start').disabled = false;
       document.getElementById('stop').disabled = true;
-      alert('Recording stopped. Ready for upload.');
+      alert('Recording stopped!');
     };
   </script>
 </body>
