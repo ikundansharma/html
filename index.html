@@ -66,8 +66,30 @@
           const fileName = `CBC_Video_${Date.now()}.mp4`;
 
           const reader = new FileReader();
-          reader.onloadend = async () => {
-            const base64Data = reader.result;
+reader.onloadend = () => {
+  const base64Data = reader.result;
+
+  // 🔥 Now POST the video to Wix Backend API
+  fetch('https://www.cuttackbulkcarrier.in/_functions/uploadVideo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chamber: 'upper', // or 'down' depending on which iframe/button
+      fileName: `CBC_Video_${Date.now()}.mp4`,
+      fileData: base64Data
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    console.log("✅ Upload successful:", data);
+    alert("Video uploaded successfully!");
+  })
+  .catch(error => {
+    console.error("❌ Upload failed:", error);
+    alert("Upload failed. Try again.");
+  });
+};
+
 
             const response = await fetch('https://www.cuttackbulkcarrier.in/_functions/uploadVideo', {
               method: 'POST',
