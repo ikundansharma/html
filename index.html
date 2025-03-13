@@ -3,25 +3,124 @@
 <head>
   <meta charset="UTF-8">
   <title>CBC Video Recorder</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      text-align: center;
+      color: #333;
+    }
+    #videoPreview {
+      width: 100%;
+      max-width: 320px;
+      margin: 10px auto;
+      background: #000;
+    }
+    button {
+      background-color: #004aad;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    button:disabled {
+      background-color: #ccc;
+    }
+  </style>
 </head>
 <body>
-  <h1>Direct Video Recorder</h1>
-  <video id="preview" autoplay playsinline width="640" height="480"></video>
+
+  <h2>CBC Direct Video Capture</h2>
+
+  <video id="videoPreview" autoplay muted></video>
+  <br/>
+
+  <button id="startBtn">Start Recording</button>
+  <button id="stopBtn" disabled>Stop Recording</button>
+  <p id="status"></p>
 
   <script>
-async function startCamera() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true }); // Skip audio for now
-    document.getElementById('preview').srcObject = stream;
-    console.log('✅ Camera access granted (video only)');
-  } catch (err) {
-    console.error('❌ Error accessing camera:', err);
-    alert('Camera access denied or not supported!');
-  }
-}
+    let mediaRecorder;
+    let recordedChunks = [];
 
+    const videoPreview = document.getElementById('videoPreview');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const status = document.getElementById('status');
 
-    startCamera();
+    async function initCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        });
+        videoPreview.srcObject = stream;
+        mediaRecorder = new MediaRecorder(stream);
+        
+        mediaRecorder.ondataavailable = event => {
+          if (event.data.size > 0) {
+            recordedChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+          recordedChunks = [];
+
+          const reader = new FileReader();
+          reader.readAsDataURL(blob);
+          reader.onloadend = () => {
+            const base64data = reader.result;
+
+            // Send the video back to Wix (HTML Component Message)
+            window.parent.postMessage({
+              fileName: `CBCVideo_${Date.now()}.mp4`,
+              lastModified: Date.now(),
+              fileData: base64data
+            }, '*');
+
+            status.innerText = '✅ Video captured and sent to parent!';
+          };
+        };
+      } catch (error) {
+        alert('Camera access denied or not supported!');
+        console.error('Camera error:', error);
+      }
+    }
+
+    startBtn.addEventListener('click', () => {
+      if (mediaRecorder) {
+        mediaRecorder.start();
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        status.innerText = 'Recording... Max 5 mins, Min 2 mins';
+        
+        // Auto-stop after 5 mins (optional)
+        setTimeout(() => {
+          if (mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            status.innerText = 'Recording stopped after max duration.';
+          }
+        }, 5 * 60 * 1000); // 5 mins
+      }
+    });
+
+    stopBtn.addEventListener('click', () => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        status.innerText = 'Recording stopped.';
+      }
+    });
+
+    // Start camera on load
+    window.onload = initCamera;
   </script>
 </body>
 </html>
