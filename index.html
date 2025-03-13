@@ -11,15 +11,34 @@
       text-align: center;
       padding: 20px;
     }
-    h1 {
-      color: #333;
+
+    img.logo {
+      width: 150px;
+      margin-bottom: 10px;
     }
+
+    #status {
+      display: inline-block;
+      padding: 10px 20px;
+      border-radius: 5px;
+      background-color: #cccccc; /* Default gray */
+      color: #333333;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .recording {
+      background-color: #d9534f; /* Bootstrap Red */
+      color: #ffffff;
+    }
+
     video {
       width: 100%;
       max-width: 400px;
       margin-bottom: 20px;
       background-color: #000;
     }
+
     button {
       margin: 10px;
       padding: 12px 24px;
@@ -28,38 +47,35 @@
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
+
     #startBtn {
       background-color: #005eb8;
       color: white;
     }
+
     #stopBtn {
-      background-color: #ccc;
-      color: black;
-    }
-    #stopBtn.active {
       background-color: #005eb8;
       color: white;
-    }
-    #status {
-      margin-top: 20px;
-      font-weight: bold;
-      color: green;
+      display: none; /* Hidden initially */
     }
   </style>
 </head>
 <body>
 
-  <img src="cbc_logo.png" alt="CBC Logo" style="width: 150px; margin-bottom: 20px;" />
-  <h1>CBC Video Recorder</h1>
+  <!-- CBC Logo -->
+  <img class="logo" src="https://static.wixstatic.com/media/b5e933_2c8bfeb206934fbfb3635f2d45bbcb00~mv2.png" alt="CBC Logo" />
 
+  <!-- Recording Status -->
+  <div id="status">Status: Ready</div>
+
+  <!-- Video Preview -->
   <video id="preview" autoplay muted playsinline></video>
 
+  <!-- Control Buttons -->
   <div>
     <button id="startBtn">Start Recording</button>
-    <button id="stopBtn" disabled>Stop Recording</button>
+    <button id="stopBtn">Stop Recording</button>
   </div>
-
-  <div id="status">Status: Ready</div>
 
   <script>
     let mediaRecorder;
@@ -73,7 +89,7 @@
     async function initCamera() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: "environment" } }, // rear camera
+          video: { facingMode: { exact: "environment" } }, // Rear camera
           audio: true
         });
 
@@ -90,26 +106,31 @@
 
         mediaRecorder.onstart = () => {
           console.log("Recording started...");
+
+          // Update status styling and text
+          statusText.classList.add('recording');
           statusText.textContent = "Status: Recording...";
 
-          // Disable start, enable stop and turn it blue
-          startBtn.disabled = true;
-          stopBtn.disabled = false;
-          stopBtn.classList.add('active');
+          // Button behaviors
+          startBtn.style.display = "none";
+          stopBtn.style.display = "inline-block";
         };
 
         mediaRecorder.onstop = () => {
           console.log("Recording stopped");
+
+          // Reset status styling
+          statusText.classList.remove('recording');
           statusText.textContent = "Status: Recording Stopped";
 
-          stopBtn.disabled = true;
-          stopBtn.classList.remove('active');
-          startBtn.disabled = false;
+          // Button behaviors
+          stopBtn.style.display = "none";
+          startBtn.style.display = "inline-block";
 
           const blob = new Blob(recordedChunks, { type: 'video/mp4' });
           const videoURL = URL.createObjectURL(blob);
 
-          // ✅ Auto download for testing
+          // ✅ Auto-download for testing
           const a = document.createElement('a');
           a.href = videoURL;
           a.download = `CBC_Video_${Date.now()}.mp4`;
@@ -119,7 +140,7 @@
 
           recordedChunks = [];
 
-          // 👉 Instead of download, we can postMessage or upload directly (next step)
+          // 👉 In production: send the video blob to backend instead of download
         };
 
       } catch (error) {
@@ -129,23 +150,25 @@
       }
     }
 
+    // Start Recording button action
     startBtn.addEventListener('click', () => {
       if (mediaRecorder && mediaRecorder.state === 'inactive') {
         mediaRecorder.start();
         console.log("Start recording clicked");
-        statusText.textContent = "Status: Recording Started";
       }
     });
 
+    // Stop Recording button action
     stopBtn.addEventListener('click', () => {
       if (mediaRecorder && mediaRecorder.state === 'recording') {
         mediaRecorder.stop();
         console.log("Stop recording clicked");
-        statusText.textContent = "Status: Stopping Recording...";
       }
     });
 
+    // Initialize on page load
     window.onload = initCamera;
   </script>
+
 </body>
 </html>
