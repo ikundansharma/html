@@ -5,26 +5,73 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CBC Video Recorder</title>
   <style>
-    body { font-family: Arial; text-align: center; background: #f0f0f0; padding: 20px; }
-    .logo { width: 150px; }
-    #status { padding: 10px 20px; border-radius: 5px; margin: 10px 0; background-color: #cccccc; color: #333; }
-    .recording { background-color: #d9534f; color: white; }
-    video { width: 100%; max-width: 400px; background-color: black; }
-    button { margin: 10px; padding: 12px 24px; font-size: 16px; cursor: pointer; background-color: #005eb8; color: white; border: none; }
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #f0f0f0;
+      padding: 20px;
+    }
+
+    .logo {
+      width: 150px;
+      margin-bottom: 10px;
+    }
+
+    #status {
+      padding: 10px 20px;
+      border-radius: 5px;
+      margin: 10px 0;
+      background-color: #cccccc;
+      color: #333;
+      font-weight: bold;
+    }
+
+    .recording {
+      background-color: #d9534f;
+      color: white;
+    }
+
+    video {
+      width: 100%;
+      max-width: 400px;
+      background-color: black;
+    }
+
+    button {
+      margin: 10px;
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #005eb8;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+
+    button:hover {
+      background-color: #004080;
+    }
   </style>
 </head>
+
 <body>
 
+  <!-- CBC Logo -->
   <img class="logo" src="https://static.wixstatic.com/media/b5e933_2c8bfeb206934fbfb3635f2d45bbcb00~mv2.png" alt="CBC Logo" />
 
+  <!-- Status Display -->
   <div id="status">Status: Ready</div>
+
+  <!-- Video Preview -->
   <video id="preview" autoplay muted playsinline></video>
 
+  <!-- Controls -->
   <div>
     <button id="startBtn">Start Recording</button>
     <button id="stopBtn" style="display:none;">Stop Recording</button>
   </div>
 
+  <!-- Script -->
   <script>
     let mediaRecorder;
     let recordedChunks = [];
@@ -34,22 +81,28 @@
     const statusText = document.getElementById('status');
     const videoPreview = document.getElementById('preview');
 
+    // ✅ Initialize Camera on page load
     async function initCamera() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: "environment" } }, // Rear camera
+          video: { facingMode: { exact: "environment" } },  // Rear camera
           audio: true
         });
 
         videoPreview.srcObject = stream;
         statusText.textContent = "Status: Camera Ready";
 
+        // Initialize MediaRecorder
         mediaRecorder = new MediaRecorder(stream);
 
+        // When data is available (recording stopped)
         mediaRecorder.ondataavailable = event => {
-          if (event.data.size > 0) recordedChunks.push(event.data);
+          if (event.data.size > 0) {
+            recordedChunks.push(event.data);
+          }
         };
 
+        // When recording starts
         mediaRecorder.onstart = () => {
           statusText.classList.add('recording');
           statusText.textContent = "Status: Recording...";
@@ -57,7 +110,8 @@
           stopBtn.style.display = "inline-block";
         };
 
-        mediaRecorder.onstop = () => {
+        // When recording stops
+        mediaRecorder.onstop = async () => {
           statusText.classList.remove('recording');
           statusText.textContent = "Status: Uploading...";
 
@@ -67,15 +121,17 @@
           const blob = new Blob(recordedChunks, { type: 'video/mp4' });
           const fileName = `CBC_Video_${Date.now()}.mp4`;
 
+          // Convert blob to base64
           const reader = new FileReader();
           reader.onloadend = () => {
-            const base64Data = reader.result;
+            const base64Data = reader.result;  // ✅ Includes "data:video/mp4;base64,..."
 
+            // ✅ Upload to Wix HTTP function
             fetch('https://www.cuttackbulkcarrier.in/_functions/uploadVideo', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                chamber: 'upper', // Change to 'down' for other chamber
+                chamber: 'upper',  // 👈 Change to 'down' for down chamber video
                 fileName: fileName,
                 fileData: base64Data
               })
@@ -84,9 +140,10 @@
             .then(data => {
               console.log("✅ Upload successful:", data);
               statusText.textContent = "✅ Upload Complete!";
-              // Optional: Redirect after success
+
+              // ✅ Optional: Redirect to CRM page after success
               setTimeout(() => {
-                window.location.href = 'https://www.cuttackbulkcarrier.in/crm-nayara';
+                window.location.href = 'https://www.cuttackbulkcarrier.in/crm-nayara'; // 👈 Change URL if needed
               }, 2000);
             })
             .catch(error => {
@@ -95,17 +152,18 @@
             });
           };
 
-          reader.readAsDataURL(blob);
+          reader.readAsDataURL(blob);  // Convert to base64
           recordedChunks = [];
         };
 
       } catch (err) {
         console.error("Camera Error:", err);
         alert("Camera access denied or not supported!");
-        statusText.textContent = "Camera access denied!";
+        statusText.textContent = "❌ Camera access denied!";
       }
     }
 
+    // ✅ Button actions
     startBtn.onclick = () => {
       if (mediaRecorder && mediaRecorder.state === 'inactive') {
         mediaRecorder.start();
@@ -118,6 +176,7 @@
       }
     };
 
+    // ✅ Start camera on page load
     window.onload = initCamera;
   </script>
 
