@@ -131,12 +131,20 @@
           const videoURL = URL.createObjectURL(blob);
 
           // ✅ Auto-download for testing
-          const a = document.createElement('a');
-          a.href = videoURL;
-          a.download = `CBC_Video_${Date.now()}.mp4`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
+const reader = new FileReader();
+reader.onloadend = () => {
+  const base64Data = reader.result;
+
+  window.parent.postMessage({
+    chamber: 'upper', // or 'down' if using down chamber iframe
+    fileName: `CBC_Video_${Date.now()}.mp4`,
+    fileData: base64Data,
+    lastModified: Date.now()
+  }, '*');
+};
+
+reader.readAsDataURL(blob);
+
 
           recordedChunks = [];
 
