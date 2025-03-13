@@ -6,55 +6,21 @@
 </head>
 <body>
   <h1>Direct Video Recorder</h1>
-
-  <video id="preview" autoplay playsinline width="640" height="480"></video><br>
-  
-  <button id="start">Start Recording</button>
-  <button id="stop" disabled>Stop Recording</button>
+  <video id="preview" autoplay playsinline width="640" height="480"></video>
 
   <script>
-    let stream;
-    let mediaRecorder;
-    let recordedChunks = [];
-
-    async function startRecording() {
+    async function startCamera() {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         document.getElementById('preview').srcObject = stream;
-
-        recordedChunks = [];
-        mediaRecorder = new MediaRecorder(stream);
-
-        mediaRecorder.ondataavailable = event => {
-          if (event.data.size > 0) {
-            recordedChunks.push(event.data);
-          }
-        };
-
-        mediaRecorder.start();
+        console.log('✅ Camera access granted');
       } catch (err) {
+        console.error('❌ Error accessing camera:', err);
         alert('Camera access denied or not supported!');
-        console.error('Camera error:', err);
       }
     }
 
-    function stopRecording() {
-      mediaRecorder.stop();
-      stream.getTracks().forEach(track => track.stop());
-    }
-
-    document.getElementById('start').onclick = () => {
-      startRecording();
-      document.getElementById('start').disabled = true;
-      document.getElementById('stop').disabled = false;
-    };
-
-    document.getElementById('stop').onclick = () => {
-      stopRecording();
-      document.getElementById('start').disabled = false;
-      document.getElementById('stop').disabled = true;
-      alert('Recording stopped!');
-    };
+    startCamera();
   </script>
 </body>
 </html>
