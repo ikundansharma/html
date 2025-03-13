@@ -26,10 +26,25 @@
       font-size: 16px;
       border: none;
       cursor: pointer;
+      transition: background-color 0.3s ease;
     }
-    #startBtn { background-color: #005eb8; color: white; }
-    #stopBtn { background-color: #ccc; color: black; }
-    #status { margin-top: 20px; font-weight: bold; color: green; }
+    #startBtn {
+      background-color: #005eb8;
+      color: white;
+    }
+    #stopBtn {
+      background-color: #ccc;
+      color: black;
+    }
+    #stopBtn.active {
+      background-color: #005eb8;
+      color: white;
+    }
+    #status {
+      margin-top: 20px;
+      font-weight: bold;
+      color: green;
+    }
   </style>
 </head>
 <body>
@@ -65,7 +80,6 @@
         videoPreview.srcObject = stream;
         statusText.textContent = "Status: Camera Ready";
 
-        // Initialize MediaRecorder after getting stream
         mediaRecorder = new MediaRecorder(stream);
 
         mediaRecorder.ondataavailable = (event) => {
@@ -77,16 +91,25 @@
         mediaRecorder.onstart = () => {
           console.log("Recording started...");
           statusText.textContent = "Status: Recording...";
+
+          // Disable start, enable stop and turn it blue
+          startBtn.disabled = true;
+          stopBtn.disabled = false;
+          stopBtn.classList.add('active');
         };
 
         mediaRecorder.onstop = () => {
           console.log("Recording stopped");
           statusText.textContent = "Status: Recording Stopped";
 
+          stopBtn.disabled = true;
+          stopBtn.classList.remove('active');
+          startBtn.disabled = false;
+
           const blob = new Blob(recordedChunks, { type: 'video/mp4' });
           const videoURL = URL.createObjectURL(blob);
 
-          // Auto download video
+          // ✅ Auto download for testing
           const a = document.createElement('a');
           a.href = videoURL;
           a.download = `CBC_Video_${Date.now()}.mp4`;
@@ -95,6 +118,8 @@
           document.body.removeChild(a);
 
           recordedChunks = [];
+
+          // 👉 Instead of download, we can postMessage or upload directly (next step)
         };
 
       } catch (error) {
@@ -109,9 +134,6 @@
         mediaRecorder.start();
         console.log("Start recording clicked");
         statusText.textContent = "Status: Recording Started";
-
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
       }
     });
 
@@ -120,13 +142,9 @@
         mediaRecorder.stop();
         console.log("Stop recording clicked");
         statusText.textContent = "Status: Stopping Recording...";
-
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
       }
     });
 
-    // Start camera on load
     window.onload = initCamera;
   </script>
 </body>
